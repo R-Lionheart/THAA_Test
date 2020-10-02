@@ -130,7 +130,12 @@ source("src/File_Import.R")
 
 print("Required files imported.")
 ```
-
+This section is specific to the THAA_Test run.
+Removes the "-2" standard run from the instrument output.
+```{r Remove extraneous standard curves, include = TRUE}
+GBT.Fate_THAA_T0.Tlong <- GBT.Fate_THAA_T0.Tlong %>%
+  filter(!str_detect(Replicate.Name, "-2"))
+```
 *User action required*
 This step changes depending on whether you are using Skyline or MSDial.
 
@@ -397,7 +402,7 @@ if (exists("duplicates.testing")) {
 
 Mini check for Metabolite.Name vs Precursor.Ion.Name.
 ```{r Compound Name check, include = TRUE}
-#QCd.data <- QCd.data %>% rename(Metabolite.Name = Precursor.Ion.Name)
+QCd.data <- QCd.data %>% rename(Metabolite.Name = Precursor.Ion.Name)
 ```
 
 Run BMIS.
