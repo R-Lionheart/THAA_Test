@@ -405,10 +405,10 @@ Mini check for Metabolite.Name vs Precursor.Ion.Name.
 QCd.data <- QCd.data %>% rename(Metabolite.Name = Precursor.Ion.Name)
 ```
 
-Run BMIS.
-```{r BMIS, include=TRUE}
-source("src/BMIS.R")
-```
+<!-- For the THAA_Test, we will use raw peak area. Run BMIS. -->
+<!-- ```{r BMIS, include=TRUE} -->
+<!-- source("src/BMIS.R") -->
+<!-- ``` -->
 
 --------------------------------------------------------------
 
@@ -439,8 +439,8 @@ Outputs:
 Enter dilution factor, injection volume, and the filtered volume from the instrument run.
 ```{r, include = TRUE}
 Dilution.Factor = 2
-Injection.Volume = 400 # nanomoles
-Volume.Filtered = 5 # liters
+Injection.Volume = 400 # microliters
+Volume.Filtered = 0.2 # liters
 
 print("Dilution factor, injection volume, and filtered volume assigned.")
 ```
