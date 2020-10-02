@@ -2,11 +2,10 @@
 
 # Imports -----------------------------------------------------------------
 # Sample Key
-filename <- RemoveCsv(list.files(path = "data_extras/", pattern = file.pattern))
+filename <- RemoveCsv(list.files(path = "data_extras/", pattern = sample.pattern))
 filepath <- file.path("data_extras", paste(filename, ".csv", sep = ""))
 
 SampKey.all <- assign(make.names(filename), read.csv(filepath, stringsAsFactors = FALSE, header = TRUE)) %>%
-  rename(Replicate.Name = Sample.Name) %>%
   mutate(Replicate.Name = Replicate.Name %>%
            str_replace("-",".")) 
 

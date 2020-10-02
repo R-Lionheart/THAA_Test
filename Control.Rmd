@@ -109,7 +109,7 @@ instrument.pattern <- "QE"
 #instrument.pattern <- "TQS"
 
 ### Create file pattern ###
-file.pattern <- "Vitamins"
+file.pattern <- "GBT-Fate_THAA_T0"
 # file.pattern <- "HILIC"
 
 ### Choose matching pattern ###
@@ -141,20 +141,20 @@ Comment or uncomment the block of variable names appropriate for your run.
 ```{r Dataset reassignment, include = TRUE}
 # Comment out the run not being used.
 
-# Skyline Cyano variables:
-skyline.RP.Cyano <- B12_Incubations_Vitamins_August2020
+## Skyline Cyano variables:
+skyline.RP.Cyano <- GBT.Fate_THAA_T0.Tlong
 
-# Skyline HILIC variables: 
+## Skyline HILIC variables: 
 # skyline.HILIC.neg <- X181116_HILIC_neg_MESO.SCOPE_HRM
 # skyline.HILIC.pos <- X181116_HILIC_pos_MESO.SCOPE_HRM
 
-# MSDial Cyano variables: 
+## MSDial Cyano variables: 
 # Area.RP.Cyano <- Area_CYANO_EddyTransect
 # Mz.RP.Cyano   <- Mz_CYANO_EddyTransect
 # RT.RP.Cyano   <- RT_CYANO_EddyTransect
 # SN.RP.Cyano   <- SN_CYANO_EddyTransect
 
-# MSDial HILIC variables: 
+## MSDial HILIC variables: 
 # Area.positive <- Area_HILICPos_Example
 # Mz.positive   <- Mz_HILICPos_Example
 # RT.positive   <- RT_HILICPos_Example
@@ -229,17 +229,12 @@ height.max <- 1.0e8
 
 # Additional QC parameters for Skyline TQS 
 # Comment this out when using MSDial
-area.max <- 1.0e8
-IR.flex  <- 0.3
-ppm.flex <- 7
+# area.max <- 1.0e8
+# IR.flex  <- 0.3
+# ppm.flex <- 7
 
 print("Parameter values assigned.")
 ```
-
-TQS WILL NEED AS EXPORTS: 
-Ion.ratio.table
-blank.max
-
 
 Run Quality Control and export.
 ```{r MSDial and Skyline QC, include=TRUE}
@@ -322,28 +317,31 @@ print("B-MIS Cutoff values assigned.")
 Comment out appropriate variable blocks according to HILIC or Cyano data.
 ```{r Cyano HILIC assignment, include = TRUE}
 
-# MSDial
+## Sample pattern to import sample key
+sample.pattern <- "Sample"
+
+## MSDial
 # software.pattern <- "MSDial"
 
-# Skyline
+## Skyline
 software.pattern <- "Skyline"
 
-# Cyano Skyline
+## Cyano Skyline
 # Column.Type = "RP"
 # standards.pattern = "Ingalls"
 # QC.pattern = "QC_Output_CyanoAq"
 
-# Cyano MSDial
+## Cyano MSDial
 Column.Type = "RP"
 standards.pattern = "Ingalls"
 QC.pattern = "QC_Output_CYANO"
 
-# HILIC Skyline
-Column.Type = "HILIC"
-standards.pattern = "Ingalls"
-QC.pattern = "QC_Output_HILIC"
+## HILIC Skyline
+# Column.Type = "HILIC"
+# standards.pattern = "Ingalls"
+# QC.pattern = "QC_Output_HILIC"
 
-# HILIC MSDial
+## HILIC MSDial
 # Column.Type = "HILIC"
 # sample.key.pattern = "HILIC"
 # standards.pattern = "Ingalls"
