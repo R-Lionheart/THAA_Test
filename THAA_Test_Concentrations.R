@@ -13,9 +13,11 @@ GBT_StdCurves <- read.csv("data_raw/GBT-Fate_THAA_T0-Tlong.csv", stringsAsFactor
 
 # Subtract the blanks from the areas
 GBT_StdCurves_BlksSub <- GBT_StdCurves %>%
-  mutate(Replicate.Name = ifelse(runtype == "Blank", substr(Replicate.Name, 1, nchar(Replicate.Name)-2), Replicate.Name)) %>%
+  mutate(Replicate.Name = ifelse(runtype == "Blank", 
+                                 substr(Replicate.Name, 1, nchar(Replicate.Name)-2), Replicate.Name)) %>%
   group_by(Precursor.Ion.Name, runtype) %>%
-  mutate(Area = ifelse(str_detect(Replicate.Name, "Blk"), round(mean(Area, na.rm = TRUE)), Area)) %>%
+  mutate(Area = ifelse(str_detect(Replicate.Name, "Blk"), 
+                       round(mean(Area, na.rm = TRUE)), Area)) %>%
   unique() %>%
   ungroup() %>%
   group_by(Precursor.Ion.Name) %>%
@@ -38,7 +40,6 @@ ggplot(GBT_StdCurves_wConcentration, aes(x=Concentration, y=Area_noBlank, group 
   geom_point() + 
   geom_smooth(method=lm, se=TRUE, fullrange=TRUE) +
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5)) +
-  # stat_poly_eq(parse=T, aes(label = ..eq.label..), formula=y~x) +
   stat_poly_eq(aes(label=..eq.label..),
                geom="label", alpha=0.33, formula=(y ~ x),
                label.y = 0.9 * max(GBT_StdCurves_wConcentration$Area_noBlank), 
@@ -55,12 +56,12 @@ Slope.Values <- GBT_StdCurves_wConcentration %>%
                Slope = coef(mod)[2])
   })
 
-All.Info <- GBT_StdCurves_wConcentration %>%
+All.Standards <- GBT_StdCurves_wConcentration %>%
   left_join(Slope.Values) %>%
   select(Replicate.Name, Precursor.Ion.Name, Area_noBlank, Concentration, Intercept, Slope)
 
 Final.Concentrations <- read.csv("data_raw/GBT-Fate_THAA_T0-Tlong.csv") %>%
-  left_join(All.Info %>% select(Precursor.Ion.Name, Slope, Intercept)) %>%
+  left_join(All.Standards %>% select(Precursor.Ion.Name, Slope, Intercept)) %>%
   unique() %>%
   group_by(Precursor.Ion.Name) %>%
   mutate(Calculated.Concentration = (Area - Intercept) / Slope)

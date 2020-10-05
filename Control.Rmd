@@ -1,6 +1,6 @@
 ---
 title: "TTHAA_Test"
-author: "RLionheart"
+author: "RLionheart & ABoysen"
 date: "12/02/2020"
 output:
   pdf_document: default
