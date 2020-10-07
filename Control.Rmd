@@ -386,15 +386,12 @@ Final.Concentrations <- read.csv("data_raw/GBT-Fate_THAA_T0-Tlong.csv") %>%
   mutate(Calculated.Concentration = (Area - Intercept) / Slope)
 ```
 
+```{r, Save files}
+currentDate <- Sys.Date()
+csvFileName <- paste("data_processed/Quantified_Output_", file.pattern, "_", currentDate, ".csv", sep = "")
 
-*User action required*
-Enter dilution factor, injection volume, and the filtered volume from the instrument run.
-```{r, include = TRUE}
-Dilution.Factor = 2
-Injection.Volume = 400 # microliters
-Volume.Filtered = 0.2 # liters
-
-print("Dilution factor, injection volume, and filtered volume assigned.")
+# Write final data
+write.csv(Final.Concentrations, csvFileName, row.names = FALSE)
 ```
 
 Clear environment.
