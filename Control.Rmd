@@ -9,28 +9,34 @@ editor_options:
   chunk_output_type: inline
 ---
 
+------------------------------------------------------------------------------------------------------
+*Remember to change the "title" at the top of the page to your project. Below, add a short description of your project*
+THAA_Test for Angie, related to the Gradients project.
+
+------------------------------------------------------------------------------------------------------
 This markdown script controls the targeted pipeline for targeted data. 
 The script handles data from both QE and TQS instruments, 
 as well as data processed by Skyline and MSDial metabolomics processing platforms.
 
-It contains four major sections:
+For the THAA_Test project, the four major sections have been modified to remove the B-MIS
+section and the Internal Standard / Response Factor quantification. 
+
 Section I: Import and cleaning/rearranging of data.
 Section II: Quality control using user-defined parameters.
-Section III: Applying Best-Matched Internal Standard (B-MIS).
-Section IV: Quantifying peak area to umol/vial when possible.
+Section III: _B-MIS, not included in this analysis_
+Section III: Quantifying peak area using standard curves.
 
 In order to run this script, you will need the following items:
 1. The instrument output in csv format from either MSDial or Skyline.
 2. A sample key from the run, which should include information such as the Column, the Bio Normalization,
 the Volume Filtered, and the Dilution Factor. An example of this is included in the data_extras/ subdirectory.
 
-*Remember to change the "title" at the top of the page to your project. Below, add a short description of your project*
-THAA_Test for Angie, related to the Gradients project.
 
 ```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 
 library(anytime)
+library(ggpmisc) # Additional library for standard curve calculation
 library(rlist)
 library(tidyr)
 library(tidyverse)
@@ -130,12 +136,14 @@ source("src/File_Import.R")
 
 print("Required files imported.")
 ```
+
 This section is specific to the THAA_Test run.
 Removes the "-2" standard run from the instrument output.
 ```{r Remove extraneous standard curves, include = TRUE}
 GBT.Fate_THAA_T0.Tlong <- GBT.Fate_THAA_T0.Tlong %>%
-  filter(!str_detect(Replicate.Name, "-2"))
+  filter(!str_detect(Replicate.Name, "-2")) 
 ```
+
 *User action required*
 This step changes depending on whether you are using Skyline or MSDial.
 
@@ -279,161 +287,105 @@ rm(list = setdiff(ls()[!ls() %in% c("file.pattern")], lsf.str()))
 
 Section III: Best-Matched Internal Standard (B-MIS)
 
-In the BMIS step:
-If working with HILIC data, identify and remove duplicates. Justify your decision.
-Match QC'd data with Internal Standards list.
-Identify internal standards and visualize those areas.
-Test if replicate names are identical across the data and the sample key. Stop the analysis process if not.
-Identify/visualize internal standards. Look over it to ensure that things are looking more or less "normal".
-Using pooled and sample runs, calculate internal standard averages. 
-Create an adjusted area for all pooled and sample runs by comparing each mass feature to each internal standard. 
-Calculate RSD for each mass feature/internal standard pair, and use this to choose a matched internal standard.
-Decide whether to accept a B-MIS or not, according to user-defined values.
-
-***
-Inputs:
-"data_extras/*Sample_Key_from_instrument*.csv"
-"data_processed/*software.pattern*_*instrument.pattern*_QC_Output_*file.pattern*_*DATE*.csv"
-Most recent Ingalls Lab Standards from GitHub:
-https://raw.githubusercontent.com/IngallsLabUW/Ingalls_Standards/master/Ingalls_Lab_Standards_NEW.csv
-
-
-Outputs:
-"figures/IS.Raw.Areas.png"
-"figures/BMIS_Evalution.png"
-"data_intermediate/*instrument.pattern*_InternalStdIssues_*DATE*.csv"
-"data_intermediate/MSDial_QuickReport_*file.pattern*_*DATE*.txt"
-"data_processed/MSDial_BMIS_Output_*file.pattern*_*DATE*.csv"
-***
-
-*User action required*
-Enter user data for cut off parameters.
-cut.off = Decrease in RSD of pooled injections, aka improvement cutoff.
-cut.off2 = Relative squared deviation minimum.
-
-```{r BMIS cutoff values, include = TRUE}
-cut.off <- 0.4 
-cut.off2 <- 0.1 
-
-print("B-MIS Cutoff values assigned.")
-```
-
-*User action required*
-Comment out appropriate variable blocks according to HILIC or Cyano data.
-```{r Cyano HILIC assignment, include = TRUE}
-
-## Sample pattern to import sample key
-sample.pattern <- "Sample"
-
-## MSDial
-# software.pattern <- "MSDial"
-
-## Skyline
-software.pattern <- "Skyline"
-
-## Cyano Skyline
-# Column.Type = "RP"
-# standards.pattern = "Ingalls"
-# QC.pattern = "QC_Output_CyanoAq"
-
-## Cyano MSDial
-Column.Type = "RP"
-standards.pattern = "Ingalls"
-QC.pattern = "QC_Output_CYANO"
-
-## HILIC Skyline
-# Column.Type = "HILIC"
-# standards.pattern = "Ingalls"
-# QC.pattern = "QC_Output_HILIC"
-
-## HILIC MSDial
-# Column.Type = "HILIC"
-# sample.key.pattern = "HILIC"
-# standards.pattern = "Ingalls"
-# QC.pattern = "QC_Output_HILIC"
-
-print(paste(file.pattern, "column type, software pattern, standards pattern, and QC pattern assigned."))
-```
-
-Import required files.
-```{r BMIS imports, include=TRUE}
-source("src/BMIS_Imports.R")
-
-print("BMIS files imported.")
-```
-
-If data is HILIC, identify duplicates and decide which to remove 
-IdentifyDuplicates function will confirm if instrument column data exists.
-User will need to use best judgement to decide which duplicate to remove.
-```{r Check duplicates, include=TRUE}
-source("src/Check_Duplicates.R")
-currentDate = Sys.Date()
-csvFileName <- paste("data_intermediate/", software.pattern, 
-                     "_HILIC.duplicates_", currentDate, ".csv", sep = "")
-
-# Using the duplicates.testing table, decide which detected compound to keep, the positive or negative.
-
-if (exists("duplicates.testing") == TRUE) {
-  print("This is a HILIC run. Look at duplicates.testing to decide which compounds to remove.")
-} else {
-  print("Non-HILIC data: no duplicates to remove.")
-}
-
-```
-
-*User action required*
-The below section automatically removes the HILICNeg compounds from the QC'd data. 
-This is not necessarily the correct solution: the user must look at the data to ensure that they are removing the right compounds.
-```{r Remove duplicates, include = TRUE}
-if (exists("duplicates.testing")) {
-  QCd.data <- QCd.data %>%
-    filter(!(Metabolite.Name %in% HILICS.duplicates$Metabolite.Name & Column == "HILICNeg")) # This line requires user attention.
-  print("HILICS duplicates removed.")
-
-  Report <- print(paste(HILICS.duplicates$Metabolite.Name, "HILICNeg"))
-  cat(Report, file = "data_intermediate/MSDIAL_HILIC_DuplicateReport.txt")
-  
-  write.csv(duplicates.testing, csvFileName, row.names = FALSE)
-} else {
-  print("Non-HILIC data: no duplicates removed.")
-}
-
-```
-
-Mini check for Metabolite.Name vs Precursor.Ion.Name.
-```{r Compound Name check, include = TRUE}
-QCd.data <- QCd.data %>% rename(Metabolite.Name = Precursor.Ion.Name)
-```
-
-<!-- For the THAA_Test, we will use raw peak area. Run BMIS. -->
-<!-- ```{r BMIS, include=TRUE} -->
-<!-- source("src/BMIS.R") -->
-<!-- ``` -->
-
+Because internal standards were not added to this run, and there are no pooled samples, 
+raw peak areas were used for this analysis.
 --------------------------------------------------------------
-
+***
+############################################3
 Section IV: Convert from peak area to umol/vial.
-
+##############################################333
 In the quantify step:
-Get response factors and response factor ratios.
-Quantify samples without an internal standard.
-Quantify samples with an internal standard.
-Accounting for dilution and filtered volume, calculate environmental quantities.
-Summarize carbon and nitrogen.
-
+Subtract the blank runs from the standard curves.
+Isolate the standard curve runs and extract slope and interval values for each compound.
+Use those values to calculate concentrations for all samples. 
 ***
-Inputs:
-"data_extras/Ingalls_Lab_Standards.csv"
-"data_extras/InternalStandardNames.csv"
-"data_processed/BMIS_Output_*file.pattern*_*DATE*.csv"
-"data_processed/MSDial_QC_Output_*file.pattern*_*DATE*.csv"
 
-Outputs:
-"data_intermediate/MSDial_ResponseFactorRatios_*DATE*.csv"
-"data_processed/Quantified_Summary_*Column.Type*_*DATE*.csv
-"data_processed/Quantified_Measurements*Column.Type*_*DATE*.csv
-"data_processed/Quantified_perSampID_*Column.Type*_*DATE*.csv
-***
+```{r, Define variables and import files}
+spikes <- c("0uM", "0.5uM", "1.0uM", "2.5uM")
+vial_types <- c("Durapore", "GF75", "Omnipore", "Vial")
+
+filename <- RemoveCsv(list.files(path = "data_intermediate/", pattern = file.pattern))
+
+filepath <- file.path("data_intermediate/", paste(filename,".csv", sep = ""))
+assign(make.names(filename), read.csv(filepath, stringsAsFactors = FALSE, check.names = TRUE) %>%
+  select(Replicate.Name, Precursor.Ion.Name, Area) %>%
+  mutate(runtype = ifelse(str_detect(Replicate.Name, "Blk"), "Blank", "Sample")))
+```
+
+Subtract the blank runs from the standard areas.
+
+*User action required*
+Define filename for imported file below.
+```{r, Subtract blanks}
+GBT_StdCurves_BlksSub <- Skyline_combined_GBT.Fate_THAA_T0_2020.10.07 %>% # Define filename here
+  mutate(Replicate.Name = ifelse(runtype == "Blank", 
+                                 substr(Replicate.Name, 1, 
+                                        nchar(Replicate.Name)-2), Replicate.Name)) %>%
+  group_by(Precursor.Ion.Name, runtype) %>%
+  mutate(Area = ifelse(str_detect(Replicate.Name, "Blk"), 
+                       round(mean(Area, na.rm = TRUE)), Area)) %>%
+  unique() %>%
+  ungroup() %>%
+  group_by(Precursor.Ion.Name) %>%
+  mutate(blankArea = Area[which(runtype == "Blank")]) %>%
+  mutate(Area_noBlank = Area - blankArea)
+```
+
+```{r Isolate concentrations}
+GBT_StdCurves_wConcentration <- GBT_StdCurves_BlksSub %>%
+  separate(Replicate.Name, into = c("Date", "run", "TempConcentration", "SampID", "Replicate"), sep = "_") %>%
+  filter(TempConcentration %in% spikes) %>%
+  mutate(TempConcentration = substr(TempConcentration, 1, nchar(TempConcentration)-2),
+         TempConcentration = as.numeric(TempConcentration)) %>%
+  mutate(Concentration = TempConcentration) %>%
+  unite(Date, run, TempConcentration, SampID, Replicate, col = "Replicate.Name")
+
+```
+
+
+```{r, Plot standard curves}
+GBT_StdCurves_Plot <- ggplot(GBT_StdCurves_wConcentration, 
+       aes(x=Concentration, y=Area_noBlank, group = Precursor.Ion.Name)) +
+  facet_wrap(~Precursor.Ion.Name) +
+  geom_point() + 
+  geom_smooth(method=lm, se=TRUE, fullrange=TRUE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5)) +
+  stat_poly_eq(aes(label=..eq.label..),
+               geom="label", alpha=0.33, formula=(y ~ x),
+               label.y = 0.9 * max(GBT_StdCurves_wConcentration$Area_noBlank), 
+               label.x = 0.5 * max(GBT_StdCurves_wConcentration$Concentration),
+               size = 2.5, parse=TRUE) +
+  theme(text=element_text(size=10)) 
+print(GBT_StdCurves_Plot)
+
+currentDate <- Sys.Date()
+ggsave(filename=paste("figures/GBT_StdCurvesPlot_", currentDate, ".png", sep = ""), plot=GBT_StdCurves_Plot)
+
+```
+
+```{r, Extract slope values}
+Slope.Values <- GBT_StdCurves_wConcentration %>% 
+  group_by(Precursor.Ion.Name) %>% 
+  do({
+    mod = lm(Area_noBlank ~ Concentration, data = .)
+    data.frame(Intercept = coef(mod)[1],
+               Slope = coef(mod)[2])
+  })
+```
+
+Calculate concentrations using the slope and intercept data.
+```{r, Join slope and intercept with data}
+All.Standards <- GBT_StdCurves_wConcentration %>%
+  left_join(Slope.Values) %>%
+  select(Replicate.Name, Precursor.Ion.Name, Area_noBlank, Concentration, Intercept, Slope)
+
+Final.Concentrations <- read.csv("data_raw/GBT-Fate_THAA_T0-Tlong.csv") %>%
+  left_join(All.Standards %>% select(Precursor.Ion.Name, Slope, Intercept)) %>%
+  unique() %>%
+  group_by(Precursor.Ion.Name) %>%
+  mutate(Calculated.Concentration = (Area - Intercept) / Slope)
+```
+
 
 *User action required*
 Enter dilution factor, injection volume, and the filtered volume from the instrument run.
@@ -443,92 +395,6 @@ Injection.Volume = 400 # microliters
 Volume.Filtered = 0.2 # liters
 
 print("Dilution factor, injection volume, and filtered volume assigned.")
-```
-
-*User action required*
-Comment out appropriate variable blocks according to HILIC or Cyano data.
-```{r, include = TRUE}
-# Cyano
-# standards.pattern = "Ingalls"
-# BMIS.pattern = "BMIS_Output_RP"
-# QC.pattern = "QC_Output_CYANO"
-# names.pattern = "Names"
-# Column.Type = "RP"
-
-# HILIC
-standards.pattern = "Ingalls"
-BMIS.pattern = "BMIS_Output_HILIC"
-QC.pattern = "QC_Output_HILIC"
-names.pattern = "Names"
-Column.Type = "HILIC"
-
-print(paste(file.pattern, "matching patterns assigned."))
-
-```
-
-Import required files for quantification.
-```{r Quantify imports, include = TRUE}
-source("src/MSDial_Quantify_Imports.R")
-
-print("Quantification files imported.")
-```
-
-Repeat the HILIC duplicates step.
-```{r Check duplicates, include=TRUE}
-check.duplicates <- list.files("data_intermediate", pattern = "duplicate", full.names = TRUE)
-
-if (length(check.duplicates) == 0) {
-  print("No HILIC data exists.")
-} else {
-  print("HILIC data exists.")
-  
-  HILICS.duplicates <- read.csv(check.duplicates, stringsAsFactors = FALSE)
-}
-```
-
-
-*User action required*
-If you are working with HILIC data, make sure your filtering step makes sense.
-```{r Check duplicates, include=TRUE}
-
-if (length(check.duplicates) == 0) {
-  print("No HILIC data exists.")
-} else {
-  HILICS.duplicates <- read.csv(check.duplicates, stringsAsFactors = FALSE)
-  QCd.data <- QCd.data %>%
-    filter(!(Metabolite.Name %in% HILICS.duplicates$Metabolite.Name & Column == "HILICNeg"))
-  print("Duplicates removed.")
-}
-
-```
-
-Check which kinds of standards have been run.
-*****************************************************************************
-This function is unlikely to work on all runs due to sampID differences.
-It will almost definitely need to be modified to apply to the dataset at hand.
-*****************************************************************************
-```{r, include = TRUE}
-Full.data <- CheckStandards2(Full.data)
-```
-
-Quantify.
-```{r, include = TRUE}
-source("src/MSDial_Quantify.R")
-```
-
-Review the "Final" files to ensure everything is correct.
-
-Save and export files.
-```{r, include = FALSE}
-currentDate <- Sys.Date()
-csvFileName.summed <- paste("data_processed/Quantified_Summary_", Column.Type, "_", currentDate, ".csv", sep = "")
-csvFileName.final <- paste("data_processed/Quantified_Measurements_", Column.Type, "_", currentDate, ".csv", sep = "")
-csvFileName.perID <- paste("data_processed/Quantified_perSampID_", Column.Type, "_", currentDate, ".csv", sep = "")
-
-
-write.csv(Final.Quantitative.Summed, csvFileName.summed, row.names = FALSE)
-write.csv(Final.Quantitative, csvFileName.final, row.names = FALSE)
-write.csv(Final.All.perSampID, csvFileName.perID, row.names = FALSE)
 ```
 
 Clear environment.
