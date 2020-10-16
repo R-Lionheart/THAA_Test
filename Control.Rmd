@@ -318,7 +318,7 @@ GBT_StdCurves_BlksSub <- GBT_StdCurves %>%
                                  substr(Replicate.Name, 1, nchar(Replicate.Name)-2), Replicate.Name)) %>%
   group_by(Precursor.Ion.Name, runtype) %>%
   mutate(Area = ifelse(str_detect(Replicate.Name, "Blk"), 
-                       round(mean(Area, na.rm = TRUE)), Area)) %>%
+                       round(max(Area, na.rm = TRUE)), Area)) %>%
   unique() %>%
   ungroup() %>%
   group_by(Precursor.Ion.Name) %>%
@@ -380,7 +380,7 @@ Final.Concentrations <- read.csv("data_raw/GBT-Fate_THAA_T0-Tlong.csv") %>%
                                  substr(Replicate.Name, 1, nchar(Replicate.Name)-2), Replicate.Name)) %>%
   group_by(Precursor.Ion.Name, runtype) %>%
   mutate(Area = ifelse(str_detect(Replicate.Name, "Blk"), 
-                       round(mean(Area, na.rm = TRUE)), Area)) %>%
+                       round(max(Area, na.rm = TRUE)), Area)) %>%
   unique() %>%
   ungroup() %>%
   group_by(Precursor.Ion.Name) %>%
