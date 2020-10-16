@@ -317,7 +317,7 @@ Subtract the blank runs from the standard areas.
 *User action required*
 Define filename for imported file below.
 ```{r, Subtract blanks}
-GBT_StdCurves_BlksSub <- Skyline_combined_GBT.Fate_THAA_T0_2020.10.07 %>% # Define filename here
+GBT_StdCurves_BlksSub <- Skyline_combined_GBT.Fate_THAA_T0_2020.10.16 %>% # Define filename here
   mutate(Replicate.Name = ifelse(runtype == "Blank", 
                                  substr(Replicate.Name, 1, 
                                         nchar(Replicate.Name)-2), Replicate.Name)) %>%
