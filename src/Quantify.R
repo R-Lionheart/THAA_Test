@@ -6,7 +6,7 @@ options(scipen = 999)
 spikes <- c("0uM", "0.5uM", "1.0uM", "2.5uM")
 vial_types <- c("Durapore", "GF75", "Omnipore", "Vial")
 
-GBT_StdCurves <- read.csv("data_raw/GBT-Fate_THAA_T0-Tlong.csv", stringsAsFactors = FALSE) %>% 
+GBT_StdCurves <- read.csv("data_raw/GBT-Fate_THAA_T0-Tlong.csv", stringsAsFactors = FALSE) %>%
   select(Replicate.Name, Precursor.Ion.Name, Area) %>%
   mutate(runtype = ifelse(str_detect(Replicate.Name, "Blk"), "Blank", "Sample")) %>%
   filter(!str_detect(Replicate.Name, "-1"))
