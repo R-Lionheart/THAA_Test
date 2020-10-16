@@ -141,7 +141,7 @@ This section is specific to the THAA_Test run.
 Removes the "-2" standard run from the instrument output.
 ```{r Remove extraneous standard curves, include = TRUE}
 GBT.Fate_THAA_T0.Tlong <- GBT.Fate_THAA_T0.Tlong %>%
-  filter(!str_detect(Replicate.Name, "-2")) 
+  filter(!str_detect(Replicate.Name, "-1")) 
 ```
 
 *User action required*
@@ -237,7 +237,7 @@ RT.flex    <- 0.2 # HILIC +/- 0.4 min, Cyano +/- 0.2 min
 blk.thresh <- 0.2 # HILIC +/- 0.3, Cyano +/- 0.2
 SN.min     <- 4 # HILIC - 4, Cyano - 4
 height.min <- 1000
-height.max <- 1.0e8
+height.max <- 5.0e8
 
 
 # Additional QC parameters for Skyline TQS 
@@ -389,7 +389,8 @@ Final.Concentrations.SlopeCalc <- Final.Concentrations %>%
   mutate(Zero.Concentration.Area = Area[which(Conc.Type == 0)],
          # (x2 - x1) = (y2 - y1) / slope
          NewConc = (Area - Zero.Concentration.Area)/(Slope),
-         Conc.Diff = abs(NewConc - Calculated.Concentration))
+         Conc.Diff = abs(NewConc - Calculated.Concentration),
+         RealCon = Area/Slope)
 ```
 
 ```{r, Save files}
