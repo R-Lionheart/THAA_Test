@@ -313,7 +313,7 @@ GBT_StdCurves <- read.csv("data_raw/GBT-Fate_THAA_T0-Tlong.csv") %>%
 
 
 ```{r, Subtract the blanks from the standard areas}
-GBT_StdCurves_BlksSub <- GBT_StdCurves%>%
+GBT_StdCurves_BlksSub <- GBT_StdCurves %>%
   mutate(Replicate.Name = ifelse(runtype == "Blank", 
                                  substr(Replicate.Name, 1, nchar(Replicate.Name)-2), Replicate.Name)) %>%
   group_by(Precursor.Ion.Name, runtype) %>%
@@ -373,24 +373,37 @@ All.Standards <- GBT_StdCurves_wConcentration %>%
   select(Replicate.Name, Precursor.Ion.Name, Area_noBlank, Concentration_uM, Intercept, Slope)
 
 Final.Concentrations <- read.csv("data_raw/GBT-Fate_THAA_T0-Tlong.csv") %>%
+  select(Replicate.Name, Precursor.Ion.Name, Area) %>%
+  mutate(runtype = ifelse(str_detect(Replicate.Name, "Blk"), "Blank", "Sample")) %>%
+  filter(!str_detect(Replicate.Name, "-1"))%>%
+  mutate(Replicate.Name = ifelse(runtype == "Blank", 
+                                 substr(Replicate.Name, 1, nchar(Replicate.Name)-2), Replicate.Name)) %>%
+  group_by(Precursor.Ion.Name, runtype) %>%
+  mutate(Area = ifelse(str_detect(Replicate.Name, "Blk"), 
+                       round(mean(Area, na.rm = TRUE)), Area)) %>%
+  unique() %>%
+  ungroup() %>%
+  group_by(Precursor.Ion.Name) %>%
+  mutate(blankArea = Area[which(runtype == "Blank")]) %>%
+  mutate(Area_noBlank = Area - blankArea) %>%
   left_join(All.Standards %>% select(Precursor.Ion.Name, Slope, Intercept)) %>%
   unique() %>%
   group_by(Precursor.Ion.Name) %>%
-  mutate(Calculated.Concentration = (Area - Intercept) / Slope)
+  mutate(Calculated.Concentration = (Area_noBlank - Intercept) / Slope)
 ```
 ```{r, Second concentration calculation using only slope}
 ## Calculation using only the slope 
 Final.Concentrations.SlopeCalc <- Final.Concentrations %>%
-  select(Replicate.Name, Precursor.Ion.Name, Area, Slope, Intercept, Calculated.Concentration) %>%
+  select(Replicate.Name, Precursor.Ion.Name, Area, Area_noBlank, Slope, Intercept, Calculated.Concentration) %>%
   filter(!str_detect(Replicate.Name, "A-1|Blk")) %>%
   mutate(Runtype = ifelse(str_detect(Replicate.Name, "A-2"), "StandardCurve", "Sample"),
          Conc.Type = ifelse(Runtype == "Standard"|str_detect(Replicate.Name, "_0uM_"), 0, NA)) %>%
   group_by(Precursor.Ion.Name) %>%
-  mutate(Zero.Concentration.Area = Area[which(Conc.Type == 0)],
+  mutate(Zero.Concentration.Area = Area_noBlank[which(Conc.Type == 0)],
          # (x2 - x1) = (y2 - y1) / slope
-         NewConc = (Area - Zero.Concentration.Area)/(Slope),
+         NewConc = (Area_noBlank - Zero.Concentration.Area)/(Slope),
          Conc.Diff = abs(NewConc - Calculated.Concentration),
-         RealCon = Area/Slope)
+         RealCon = Area_noBlank/Slope)
 ```
 
 ```{r, Save files}
