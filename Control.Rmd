@@ -404,7 +404,7 @@ Final.Concentrations.SlopeCalc <- Final.Concentrations %>%
          NewConc = (Area_noBlank - Zero.Concentration.Area)/(Slope),
          Conc.Diff = abs(NewConc - Calculated.Concentration),
          RealCon = Area_noBlank/Slope,
-         Concenctration.uM.with.Dilution.Correction = RealCon*10) ## with taking the dilution into account: we took a 10 uL aliquot of the hydrolyzed amino acid sample and diluted to 100 uL total when we added the reagents for derivitization, so the 'original' concentration is 10 x what we calucated here.
+         Concentration.uM.with.Dilution.Correction = RealCon*10) ## Taking the dilution into account: we took a 10 uL aliquot of the hydrolyzed amino acid sample and diluted to 100 uL total when we added the reagents for derivitization, so the 'original' concentration is 10 x what we calculated here.
 
 
 ```
